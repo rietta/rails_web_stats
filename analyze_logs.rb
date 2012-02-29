@@ -11,7 +11,7 @@
 
 
 require 'rubygems'
-require "active_support/core_ext"
+#require "active_support/core_ext"
 
 #
 #
@@ -24,6 +24,22 @@ def check_for_and_create_directory(wanted_directory)
   raise "Could not access or create output directory #{wanted_directory}" unless File.exists?(wanted_directory) && File.directory?(wanted_directory)
   raise "The output directory exists, but this proccess's user doesn't have write permission to #{wanted_directory}" unless File.writable?(wanted_directory)
 end # check_for_and_create_directory
+
+#
+#
+#
+def request_log_analyzer(files_to_process)
+  if nil == files_to_process || files_to_process.empty?
+    puts '# No log files to process'
+  else
+    files_to_process.each do |a|
+      log_cmd = "request-log-analyzer #{a[:input_file]} --silent --output #{a[:format]} --file #{a[:output_file]}"
+      puts "Running '#{log_cmd}'"
+      exec(log_cmd)
+      puts "\n"
+    end
+  end
+end # request_log_analyzer
 
 #
 #
@@ -67,7 +83,7 @@ def analyze_log_directory(directory_path, server_log_name = "httpd_access_log", 
     files_to_process.push({
              :input_file => server_log_file_path,
              :output_file => File.expand_path(File.join(output_directory_path, 'web_server_analysis.html')),
-             :type => :html
+             :format => :html
             })
   end
   
@@ -76,11 +92,12 @@ def analyze_log_directory(directory_path, server_log_name = "httpd_access_log", 
     files_to_process.push({
              :input_file => rails_log_file_path,
              :output_file => File.expand_path(File.join(output_directory_path, 'rails_analysis.html')),
-             :type => :html
+             :format => :html
             })
   end
   
-  puts files_to_process.to_json
+  # puts files_to_process.to_json
+  request_log_analyzer(files_to_process)
 end # analyze_log_directory
 
 
@@ -95,7 +112,7 @@ if ARGV.empty?
 elsif ARGV.length == 1
   log_directory_path = ARGV.pop
 else
-  puts "Usage: analyze_logs log_directory_path [PATH_TO_REPO] [OUTPUT_FILE]"
+  puts "Usage: analyze_logs log_directory_path"
   exit 0
 end
 
